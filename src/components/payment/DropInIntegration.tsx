@@ -168,7 +168,7 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
         }
 
         if (Payrails) {
-          const payrailsClient = Payrails.init(clientConfiguration, { environment: PayrailsEnvironment.TEST });
+          const payrailsClient = Payrails.init(clientConfiguration.data, { environment: PayrailsEnvironment.TEST });
           const dropIn = payrailsClient.dropin(dropInConfiguration);
           dropIn.mount("#dropin-container");
         }
