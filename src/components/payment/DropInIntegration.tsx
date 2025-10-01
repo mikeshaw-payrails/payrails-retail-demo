@@ -131,6 +131,9 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
                 display: "block",
                 height: "min-content",
               },
+              storeCardCheckbox: {
+                marginTop: "16px",
+              },
               inputFields: {
                 all: {
                   base: {
@@ -154,8 +157,8 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
                   base: {
                     borderRadius: "8px",
                     borderBottomRightRadius: "8px",
-                    marginLeft: "0.5rem",
-                    maxWidth: "calc(50% - 0.5rem)",
+                    marginLeft: "0.7rem",
+                    maxWidth: "calc(66% - 0.5rem)",
                   },
                 },
                 EXPIRATION_DATE: {
@@ -167,8 +170,8 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
                 },
                 EXPIRATION_YEAR: {
                   base: {
-                    marginLeft: "0.5rem",
-                    maxWidth: "calc(90% - 0.5rem)",
+                    marginLeft: "0.3rem",
+                    maxWidth: "calc(90% - 0.3rem)",
                   },
                 }
               },
