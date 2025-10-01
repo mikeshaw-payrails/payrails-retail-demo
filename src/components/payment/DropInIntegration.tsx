@@ -93,6 +93,12 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
             },
           },
           styles: {
+            authFailed: {
+              top: "0px",
+              right: "0px",
+              bottom: "0px",
+              left: "0px",
+            },
             container: {
               styles: {
                 backgroundColor: "#fff",
