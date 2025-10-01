@@ -293,6 +293,29 @@ const ElementsIntegration = ({
           });
           
           applePayButton.mount('#apple-pay-button-container');
+
+          // paypal
+          const paypalButton = payrailsClient.paypalButton({
+            showStoreInstrumentCheckbox: false, // default false
+            alwaysStoreInstrument: false, // default false
+            styles: {
+              color: "black",
+              height: 30,
+              label: "pay",
+              shape: "rect",
+              tagline: false,
+            },
+            events: {
+              // same as payment button
+            },
+            translations: {
+              labels: {
+                saveInstrument: 'string'
+              },
+            }
+          });
+          
+          paypalButton.mount('#paypal-button-container');
         }
       } catch (error) {
         console.error("Failed to initialize Elements:", error);
@@ -344,6 +367,7 @@ const ElementsIntegration = ({
         {/* Google Pay Button */}
         <div id="google-pay-button-container" className="mb-6"></div>
         <div id="apple-pay-button-container" className="mb-6"></div>
+        <div id="paypal-button-container" className="mb-6"></div>
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-fashion-border" />
