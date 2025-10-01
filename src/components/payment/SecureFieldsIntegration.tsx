@@ -4,6 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
+import { v4 as uuidv4 } from "uuid";
+
+import "@payrails/web-sdk/payrails-styles.css";
+import {
+  CardFormOptions,
+  ElementType,
+  Payrails,
+  PayrailsEnvironment,
+} from "@payrails/web-sdk";
+
 interface SecureFieldsIntegrationProps {
   amount: number;
   currency: string;
@@ -20,50 +30,321 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
     // Mock Payrails Secure Fields SDK initialization
     const initializeSecureFields = async () => {
       try {
-        console.log('Payment details for Secure Fields:', { amount, currency });
+        const apiURL = import.meta.env.VITE_API_URL;
 
-        // TODO: Replace with actual Payrails SDK
-        /*
-        const payrails = await PayrailsSDK.create({
-          publishableKey: process.env.PAYRAILS_PUBLISHABLE_KEY,
-          environment: 'sandbox'
-        });
-
-        const secureFields = payrails.secureFields({
-          amount,
-          currency,
-          theme: {
-            base: {
-              fontSize: '16px',
-              color: '#1f1f1f',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontWeight: '400',
-              backgroundColor: '#ffffff'
+        const response = await fetch(`${apiURL}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-client-key": "lWQVRFIEtFWS0tLS0tCk1JSUpRZ0lCQURBTkJna3",
+          },
+          body: JSON.stringify({
+            workSpaceId: "7f9f1882-a103-408d-ac96-46a7021e537a",
+            amount: {
+              value: amount.toString(),
+              currency: currency,
             },
-            focus: {
-              borderColor: '#1f1f1f',
-              backgroundColor: '#fafafa'
-            }
-          }
+            type: "dropIn",
+            holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
+            workflowCode: "payment-acceptance",
+            merchantReference: `order_${uuidv4()}`,
+          }),
         });
 
-        // Create secure fields
-        const cardNumberField = secureFields.create('cardNumber');
-        const expiryField = secureFields.create('expiryDate');
-        const cvvField = secureFields.create('cvv');
-
-        // Mount to secure containers
-        cardNumberField.mount('#secure-card-number');
-        expiryField.mount('#secure-expiry');
-        cvvField.mount('#secure-cvv');
-
-        // Setup event listeners
-        cardNumberField.on('change', (event) => {
-          if (event.error) {
-            console.error('Card number error:', event.error);
+        // ✅ Check if response is not ok
+        if (!response.ok) {
+          // Try to parse error details if available
+          let errorDetails;
+          try {
+            errorDetails = await response.json();
+          } catch {
+            errorDetails = await response.text();
           }
-        });
-        */
+
+          throw new Error(
+            `API request failed: ${response.status} ${
+              response.statusText
+            }\nDetails: ${JSON.stringify(errorDetails)}`
+          );
+        }
+
+        const clientConfiguration = await response.json();
+        console.log("Client configuration:", clientConfiguration);
+
+        const cardFormOptions: CardFormOptions = {
+          showCardHolderName: true,
+          showStoreInstrumentCheckbox: true,
+          showSingleExpiryDateField: false,
+
+          events: {},
+          styles: {
+            wrapper: {
+              height: "min-content",
+            },
+            base: {
+              fontSize: "1em",
+              outline: "none",
+              boxSizing: "border-box",
+              display: "block",
+              height: "min-content",
+            },
+            storeCardCheckbox: {
+              marginTop: "16px",
+            },
+            inputFields: {
+              all: {
+                base: {
+                  borderTop: "1px solid #D3D3D3",
+                  borderLeft: "1px solid #D3D3D3",
+                  borderRight: "1px solid #D3D3D3",
+                  borderBottom: "1px solid #D3D3D3",
+                  borderRadius: "8px",
+                  padding: "0.8rem",
+                  boxSizing: "border-box",
+                  marginTop: "8px",
+                },
+              },
+              CARDHOLDER_NAME: {
+                base: {
+                  borderTopLeftRadius: "8px",
+                  borderTopRightRadius: "8px",
+                },
+              },
+              CVV: {
+                base: {
+                  borderRadius: "8px",
+                  borderBottomRightRadius: "8px",
+                  marginLeft: "0.7rem",
+                  maxWidth: "calc(66% - 0.5rem)",
+                },
+              },
+              EXPIRATION_DATE: {
+                base: {
+                  borderRadius: "8px",
+                  borderBottomRightRadius: "8px",
+                  maxWidth: "calc(80% - 0.5rem)",
+                },
+              },
+              EXPIRATION_YEAR: {
+                base: {
+                  marginLeft: "0.3rem",
+                  maxWidth: "calc(90% - 0.3rem)",
+                },
+              },
+            },
+            labels: {
+              all: {
+                fontKerning: "normal",
+                fontFamily: "Inter, system-ui, sans-serif",
+                border: "0",
+                fontStyle: "normal",
+                margin: "0",
+                padding: "0",
+                verticalAlign: "baseline",
+                fontSize: "1rem",
+                fontWeight: "400",
+                display: "block",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                transition: "color .1s ease-out",
+                whiteSpace: "nowrap",
+                boxSizing: "border-box",
+                color: "#3e3e3e",
+                marginTop: "8px",
+              },
+              CVV: {
+                marginLeft: "0.5rem",
+              },
+            },
+
+            addressSelector: {
+              wrapper: {
+                display: "flex",
+                flexDirection: "row",
+                gap: "8px",
+              },
+              countrySelector: {
+                wrapper: {
+                  flexDirection: "column",
+                },
+                element: {
+                  border: "1px solid #D3D3D3",
+                  borderRadius: "8px",
+                  padding: "0.8rem",
+                  boxShadow: "none",
+                  height: "fit-content",
+                  margin: "0px",
+                },
+              },
+              postalCodeInput: {
+                wrapper: {
+                  flexDirection: "column",
+                },
+                element: {
+                  maxWidth: "40%",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  boxSizing: "border-box",
+                  border: "1px solid #D3D3D3",
+                },
+              },
+            },
+          },
+        };
+
+        if (Payrails) {
+          const payrailsClient = Payrails.init(clientConfiguration.data, {
+            environment: PayrailsEnvironment.TEST,
+          });
+
+          const container = payrailsClient.collectContainer({
+            containerType: 'COLLECT'
+          });
+
+          // Card holder name field
+          const cardHolderName = container.createCollectElement({
+            inputStyles: {
+              base: {
+                borderTop: "1px solid #D3D3D3",
+                borderLeft: "1px solid #D3D3D3",
+                borderRight: "1px solid #D3D3D3",
+                borderBottom: "1px solid #D3D3D3",
+                borderRadius: "8px",
+                padding: "0.8rem",
+                boxSizing: "border-box",
+                marginTop: "8px",
+              },
+              cardIcon: {
+                display: "none"
+              },
+            },
+            labelStyles: {
+              base: {
+                fontSize: "12px",
+                fontWeight: "bold",
+              },
+            },
+            errorTextStyles: {
+              base: {
+                color: "#f44336",
+              },
+            },
+            placeholder: "",
+            
+            type: ElementType.CARD_NUMBER,
+          });
+          cardHolderName.mount("#cardHolderName");
+
+          // Card number field
+          const cardNumber = container.createCollectElement({
+            inputStyles: {
+              base: {
+                border: "none",
+                textIndent: "0px",
+              },
+              cardIcon: {
+                display: "none"
+              },
+            },
+            labelStyles: {
+              base: {
+                fontSize: "12px",
+                fontWeight: "bold",
+              },
+            },
+            errorTextStyles: {
+              base: {
+                color: "#f44336",
+              },
+            },
+            placeholder: "1234 1234 1234 1234",
+            
+            type: ElementType.CARD_NUMBER,
+          });
+          cardNumber.mount("#cardNumber");
+
+          // Expiration month field
+          const expirationMonth = container.createCollectElement({
+            inputStyles: {
+              base: {
+                border: "none",
+              },
+              cardIcon: {
+                display: "none"
+              },
+            },
+            labelStyles: {
+              base: {
+                fontSize: "12px",
+                fontWeight: "bold",
+              },
+            },
+            errorTextStyles: {
+              base: {
+                color: "#f44336",
+              },
+            },
+            placeholder: "MM",
+            
+            type: ElementType.EXPIRATION_MONTH,
+          });
+          expirationMonth.mount("#expirationMonth");
+
+          // Expiration year field
+          const expirationYear = container.createCollectElement({
+            inputStyles: {
+              base: {
+                border: "none",
+              },
+              cardIcon: {
+                display: "none"
+              },
+            },
+            labelStyles: {
+              base: {
+                fontSize: "12px",
+                fontWeight: "bold",
+              },
+            },
+            errorTextStyles: {
+              base: {
+                color: "#f44336",
+              },
+            },
+            placeholder: "YY",
+            
+            type: ElementType.EXPIRATION_YEAR,
+          });
+          expirationYear.mount("#expirationYear");
+
+          // Expiration year field
+          const cvv = container.createCollectElement({
+            inputStyles: {
+              base: {
+                border: "none",
+              },
+              cardIcon: {
+                display: "none"
+              },
+            },
+            labelStyles: {
+              base: {
+                fontSize: "12px",
+                fontWeight: "bold",
+              },
+            },
+            errorTextStyles: {
+              base: {
+                color: "#f44336",
+              },
+            },
+            placeholder: "123",
+            
+            type: ElementType.CVV,
+          });
+          cvv.mount("#cvv");
+
+        }
 
         console.log("🔧 Secure Fields SDK would be initialized here");
       } catch (error) {
@@ -115,12 +396,13 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
           <Label htmlFor="nameOnCard" className="text-sm font-medium text-foreground mb-2 block">
             Cardholder Name
           </Label>
-          <Input
+          {/* <Input
             id="nameOnCard"
             value={customerData.nameOnCard}
             onChange={(e) => handleInputChange("nameOnCard", e.target.value)}
             className="border-fashion-border focus:border-foreground focus:ring-0 bg-fashion-surface"
-          />
+          /> */}
+          <div id="cardHolderName"></div>
         </div>
 
         <div>
@@ -131,13 +413,14 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
             id="secure-card-number"
             className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
           >
-            <div className="flex items-center justify-between w-full">
+            {/* <div className="flex items-center justify-between w-full">
               <span className="text-muted-foreground text-sm font-light">Secure Tokenized Field</span>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-success rounded-full"></div>
                 <span className="text-xs text-success font-medium">Protected</span>
               </div>
-            </div>
+            </div> */}
+            <div id="cardNumber" className="w-full"></div>
           </div>
         </div>
 
@@ -150,9 +433,13 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               id="secure-expiry"
               className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
             >
-              <div className="flex items-center justify-between w-full">
+              {/* <div className="flex items-center justify-between w-full">
                 <span className="text-muted-foreground text-sm font-light">MM/YY</span>
                 <div className="w-2 h-2 bg-success rounded-full"></div>
+              </div> */}
+              <div className="flex space-x-2 w-full">
+                <div id="expirationMonth" className="w-1/2"></div>
+                <div id="expirationYear" className="w-1/2"></div>
               </div>
             </div>
           </div>
@@ -164,10 +451,11 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               id="secure-cvv"
               className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
             >
-              <div className="flex items-center justify-between w-full">
+              {/* <div className="flex items-center justify-between w-full">
                 <span className="text-muted-foreground text-sm font-light">•••</span>
                 <div className="w-2 h-2 bg-success rounded-full"></div>
-              </div>
+              </div> */}
+              <div id="cvv" className="w-full"></div>
             </div>
           </div>
         </div>
