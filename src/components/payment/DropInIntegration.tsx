@@ -128,6 +128,11 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
               return Promise.resolve(true);
             },
           },
+          translations: {
+            klarna: {
+              label: "Klarna"
+            }
+          },
           styles: {
             authFailed: {
               top: "0px",
