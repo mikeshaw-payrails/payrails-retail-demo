@@ -14,13 +14,21 @@ import {
   PayrailsEnvironment,
 } from "@payrails/web-sdk";
 
+import { CustomerOrderData } from "@/types/checkout";
+import { CART_ITEMS } from "@/lib/cart";
+import { useLocationContext } from "@/contexts/LocationContext";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
+
 interface DropInIntegrationProps {
   amount: number;
   currency: string;
+  customerOrderData?: CustomerOrderData;
 }
 
-const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
+const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegrationProps) => {
   const navigate = useNavigate();
+  const { selectedLocation } = useLocationContext();
+  const { convertPrice } = useLocationDetection();
   const [selectedMethod, setSelectedMethod] = useState<string>("card");
   const [cardData, setCardData] = useState({
     cardHolder: "",
@@ -31,11 +39,50 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("Payment details for Drop-in:", { amount, currency });
+    console.log("Payment details for Drop-in:", { amount, currency, customerOrderData });
 
     const initializeDropInElement = async () => {
       try {
         const apiURL = import.meta.env.VITE_API_URL;
+
+        // Build line items in selected currency
+        const lineItems = CART_ITEMS.map(item => {
+          const unit = convertPrice(item.price, 'USD', currency);
+          const total = unit * item.quantity;
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: { value: unit.toString() },
+            total: { value: total.toString() }
+          };
+        });
+
+        const metaPayload = {
+          order: {
+            ...customerOrderData?.order,
+            lines: lineItems,
+          },
+          customer: {
+            ...customerOrderData?.customer,
+            country: { code: selectedLocation?.countryCode || customerOrderData?.order.billingAddress.country.code || 'US' }
+          },
+        };
+        console.debug('[DropIn] Meta payload sent to backend', metaPayload);
+
+        const body = JSON.stringify({
+          workSpaceId: "7f9f1882-a103-408d-ac96-46a7021e537a",
+          amount: {
+            value: amount.toString(),
+            currency: currency,
+          },
+          meta: metaPayload,
+          type: "dropIn",
+          holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
+          workflowCode: "payment-acceptance",
+          merchantReference: `o_${uuidv4()}`,
+        })
+
+        console.log("Request body for Drop-in:", body);
 
         const response = await fetch(`${apiURL}`, {
           method: "POST",
@@ -43,17 +90,7 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
             "Content-Type": "application/json",
             "x-client-key": "lWQVRFIEtFWS0tLS0tCk1JSUpRZ0lCQURBTkJna3",
           },
-          body: JSON.stringify({
-            workSpaceId: "7f9f1882-a103-408d-ac96-46a7021e537a",
-            amount: {
-              value: amount.toString(),
-              currency: currency,
-            },
-            type: "dropIn",
-            holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
-            workflowCode: "payment-acceptance",
-            merchantReference: `order_${uuidv4()}`,
-          }),
+          body: body,
         });
 
         // ✅ Check if response is not ok
@@ -67,8 +104,7 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
           }
 
           throw new Error(
-            `API request failed: ${response.status} ${
-              response.statusText
+            `API request failed: ${response.status} ${response.statusText
             }\nDetails: ${JSON.stringify(errorDetails)}`
           );
         }
@@ -79,10 +115,10 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
         const dropInConfiguration: DropinOptions = {
           paymentMethodsConfiguration: {
             cards: {
-              showCardHolderName: true,
-              showStoreInstrumentCheckbox: true,
-              showStoredInstruments: true,
-              showExistingCards: true,
+              showCardHolderName: false,
+              showStoreInstrumentCheckbox: false,
+              showStoredInstruments: false,
+              showExistingCards: false,
             },
           },
           events: {
@@ -278,7 +314,7 @@ const DropInIntegration = ({ amount, currency }: DropInIntegrationProps) => {
     };
 
     initializeDropInElement();
-  }, [amount, currency]);
+  }, [amount, currency, customerOrderData, navigate, selectedLocation, convertPrice]);
 
   const handleCardInputChange = (field: string, value: string) => {
     setCardData((prev) => ({ ...prev, [field]: value }));

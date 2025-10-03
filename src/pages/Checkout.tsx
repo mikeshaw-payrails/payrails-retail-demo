@@ -8,6 +8,7 @@ import PaymentIntegrationToggle from "@/components/PaymentIntegrationToggle";
 import DropInIntegration from "@/components/payment/DropInIntegration";
 import ElementsIntegration from "@/components/payment/ElementsIntegration";
 import SecureFieldsIntegration from "@/components/payment/SecureFieldsIntegration";
+import { CustomerOrderData } from "@/types/checkout";
 import { useLocationContext } from "@/contexts/LocationContext";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
 
@@ -15,6 +16,7 @@ type IntegrationType = "dropin" | "elements" | "secure-fields";
 
 const Checkout = () => {
   const [activeIntegration, setActiveIntegration] = useState<IntegrationType>("dropin");
+  const [customerOrderData, setCustomerOrderData] = useState<CustomerOrderData | undefined>();
   const { selectedLocation } = useLocationContext();
   const { convertPrice } = useLocationDetection();
 
@@ -40,13 +42,13 @@ const Checkout = () => {
   const renderPaymentIntegration = () => {
     switch (activeIntegration) {
       case "dropin":
-        return <DropInIntegration amount={basketData.amount} currency={basketData.currency} />;
+        return <DropInIntegration amount={basketData.amount} currency={basketData.currency} customerOrderData={customerOrderData} />;
       case "elements":
-        return <ElementsIntegration amount={basketData.amount} currency={basketData.currency} />;
+        return <ElementsIntegration amount={basketData.amount} currency={basketData.currency} customerOrderData={customerOrderData} />;
       case "secure-fields":
-        return <SecureFieldsIntegration amount={basketData.amount} currency={basketData.currency} />;
+        return <SecureFieldsIntegration amount={basketData.amount} currency={basketData.currency} customerOrderData={customerOrderData} />;
       default:
-        return <DropInIntegration amount={basketData.amount} currency={basketData.currency} />;
+        return <DropInIntegration amount={basketData.amount} currency={basketData.currency} customerOrderData={customerOrderData} />;
     }
   };
 
@@ -76,7 +78,7 @@ const Checkout = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
           {/* Left Column - Forms */}
           <div className="space-y-8">
-            <CustomerForm />
+            <CustomerForm onChange={setCustomerOrderData} />
             <PaymentIntegrationToggle
               activeType={activeIntegration}
               onTypeChange={setActiveIntegration}

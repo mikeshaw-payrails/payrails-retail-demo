@@ -11,15 +11,21 @@ import {
   Payrails,
   PayrailsEnvironment,
 } from "@payrails/web-sdk";
+import { CustomerOrderData } from "@/types/checkout";
+import { CART_ITEMS } from "@/lib/cart";
+import { useLocationContext } from "@/contexts/LocationContext";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 interface ElementsIntegrationProps {
   amount: number;
   currency: string;
+  customerOrderData?: CustomerOrderData;
 }
 
 const ElementsIntegration = ({
   amount,
   currency,
+  customerOrderData,
 }: ElementsIntegrationProps) => {
   const [paymentData, setPaymentData] = useState({
     cardNumber: "",
@@ -28,12 +34,37 @@ const ElementsIntegration = ({
     nameOnCard: "",
   });
   const { toast } = useToast();
+  const { selectedLocation } = useLocationContext();
+  const { convertPrice } = useLocationDetection();
 
   useEffect(() => {
     // Mock Payrails Elements SDK initialization
     const initializeElements = async () => {
       try {
         const apiURL = import.meta.env.VITE_API_URL;
+
+        const lineItems = CART_ITEMS.map(item => {
+          const unit = convertPrice(item.price, 'USD', currency);
+          const total = unit * item.quantity;
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: { value: unit.toString() },
+            total: { value: total.toString() }
+          };
+        });
+
+        const metaPayload = {
+          order: {
+            ...customerOrderData?.order,
+            lines: lineItems,
+          },
+          customer: {
+            ...customerOrderData?.customer,
+            country: { code: selectedLocation?.countryCode || customerOrderData?.order.billingAddress.country.code || 'US' }
+          },
+        };
+        console.debug('[Elements] Meta payload sent to backend', metaPayload);
 
         const response = await fetch(`${apiURL}`, {
           method: "POST",
@@ -47,10 +78,11 @@ const ElementsIntegration = ({
               value: amount.toString(),
               currency: currency,
             },
+            meta: metaPayload,
             type: "dropIn",
             holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
             workflowCode: "payment-acceptance",
-            merchantReference: `order_${uuidv4()}`,
+            merchantReference: `o_${uuidv4()}`
           }),
         });
 
@@ -65,8 +97,7 @@ const ElementsIntegration = ({
           }
 
           throw new Error(
-            `API request failed: ${response.status} ${
-              response.statusText
+            `API request failed: ${response.status} ${response.statusText
             }\nDetails: ${JSON.stringify(errorDetails)}`
           );
         }
@@ -206,7 +237,7 @@ const ElementsIntegration = ({
 
           // payment button
           const paymentButton = payrailsClient.paymentButton({
-            translations:{
+            translations: {
               label: 'Complete Purchase',
             },
             disabledByDefault: false, // default is false
@@ -260,7 +291,7 @@ const ElementsIntegration = ({
           paymentButton.mount('#payment-button-container');
 
           const googlePayButton = payrailsClient.googlePayButton({
-            environment: 'TEST' as PayrailsEnvironment ,
+            environment: 'TEST' as PayrailsEnvironment,
             showStoreInstrumentCheckbox: false,
             merchantInfo: {
               merchantId: `order_${uuidv4()}`,
@@ -276,7 +307,7 @@ const ElementsIntegration = ({
               // Same as payment button
             }
           });
-          
+
           googlePayButton.mount('#google-pay-button-container');
 
           // Apple pay button
@@ -284,14 +315,14 @@ const ElementsIntegration = ({
             showStoreInstrumentCheckbox: false,
             events: {
               // same as payment button
-              },
-              styles: {
-                type: 'buy',
-                style: 'black',
-              }
-            
+            },
+            styles: {
+              type: 'buy',
+              style: 'black',
+            }
+
           });
-          
+
           applePayButton.mount('#apple-pay-button-container');
 
           // paypal
@@ -314,7 +345,7 @@ const ElementsIntegration = ({
               },
             }
           });
-          
+
           paypalButton.mount('#paypal-button-container');
         }
       } catch (error) {
@@ -323,7 +354,7 @@ const ElementsIntegration = ({
     };
 
     initializeElements();
-  }, [amount, currency]);
+  }, [amount, currency, customerOrderData, selectedLocation, convertPrice]);
 
   const handleInputChange = (field: string, value: string) => {
     setPaymentData((prev) => ({ ...prev, [field]: value }));
@@ -362,7 +393,7 @@ const ElementsIntegration = ({
           Individual secure payment components for custom experiences
         </p>
       </div>
-      
+
       <div className="space-y-6">
         {/* Google Pay Button */}
         <div id="google-pay-button-container" className="mb-6"></div>
@@ -380,8 +411,8 @@ const ElementsIntegration = ({
         </div>
 
         {/* <div> */}
-          <div id="card-form-container"></div>
-          {/* <Label
+        <div id="card-form-container"></div>
+        {/* <Label
             htmlFor="nameOnCard"
             className="text-sm font-medium text-foreground mb-2 block"
           >

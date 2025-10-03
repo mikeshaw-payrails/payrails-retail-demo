@@ -13,24 +13,54 @@ import {
   Payrails,
   PayrailsEnvironment,
 } from "@payrails/web-sdk";
+import { CustomerOrderData } from "@/types/checkout";
+import { CART_ITEMS } from "@/lib/cart";
+import { useLocationContext } from "@/contexts/LocationContext";
+import { useLocationDetection } from "@/hooks/useLocationDetection";
 
 interface SecureFieldsIntegrationProps {
   amount: number;
   currency: string;
+  customerOrderData?: CustomerOrderData;
 }
 
-const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationProps) => {
+const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: SecureFieldsIntegrationProps) => {
   const [customerData, setCustomerData] = useState({
     nameOnCard: "",
     billingAddress: ""
   });
   const { toast } = useToast();
+  const { selectedLocation } = useLocationContext();
+  const { convertPrice } = useLocationDetection();
 
   useEffect(() => {
     // Mock Payrails Secure Fields SDK initialization
     const initializeSecureFields = async () => {
       try {
         const apiURL = import.meta.env.VITE_API_URL;
+
+        const lineItems = CART_ITEMS.map(item => {
+          const unit = convertPrice(item.price, 'USD', currency);
+          const total = unit * item.quantity;
+          return {
+            name: item.name,
+            quantity: item.quantity,
+            unitPrice: { value: unit.toString() },
+            total: { value: total.toString() }
+          };
+        });
+
+        const metaPayload = {
+          order: {
+            ...customerOrderData?.order,
+            lines: lineItems,
+          },
+          customer: {
+            ...customerOrderData?.customer,
+            country: { code: selectedLocation?.countryCode || customerOrderData?.order.billingAddress.country.code || 'US' }
+          },
+        };
+        console.debug('[SecureFields] Meta payload sent to backend', metaPayload);
 
         const response = await fetch(`${apiURL}`, {
           method: "POST",
@@ -44,10 +74,11 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               value: amount.toString(),
               currency: currency,
             },
+            meta: metaPayload,
             type: "dropIn",
             holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
             workflowCode: "payment-acceptance",
-            merchantReference: `order_${uuidv4()}`,
+            merchantReference: `o_${uuidv4()}`
           }),
         });
 
@@ -62,8 +93,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
           }
 
           throw new Error(
-            `API request failed: ${response.status} ${
-              response.statusText
+            `API request failed: ${response.status} ${response.statusText
             }\nDetails: ${JSON.stringify(errorDetails)}`
           );
         }
@@ -230,7 +260,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               },
             },
             placeholder: "",
-            
+
             type: ElementType.CARD_NUMBER,
           });
           cardHolderName.mount("#cardHolderName");
@@ -258,7 +288,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               },
             },
             placeholder: "1234 1234 1234 1234",
-            
+
             type: ElementType.CARD_NUMBER,
           });
           cardNumber.mount("#cardNumber");
@@ -285,7 +315,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               },
             },
             placeholder: "MM",
-            
+
             type: ElementType.EXPIRATION_MONTH,
           });
           expirationMonth.mount("#expirationMonth");
@@ -312,7 +342,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               },
             },
             placeholder: "YY",
-            
+
             type: ElementType.EXPIRATION_YEAR,
           });
           expirationYear.mount("#expirationYear");
@@ -339,7 +369,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
               },
             },
             placeholder: "123",
-            
+
             type: ElementType.CVV,
           });
           cvv.mount("#cvv");
@@ -353,7 +383,7 @@ const SecureFieldsIntegration = ({ amount, currency }: SecureFieldsIntegrationPr
     };
 
     initializeSecureFields();
-  }, [amount, currency]);
+  }, [amount, currency, customerOrderData, selectedLocation, convertPrice]);
 
   const handleInputChange = (field: string, value: string) => {
     setCustomerData(prev => ({ ...prev, [field]: value }));

@@ -182,3 +182,40 @@ To connect a custom domain with Lovable:
 
 - [Lovable Documentation](https://docs.lovable.dev/)
 - [Lovable Discord Community](https://discord.com/channels/1119885301872070706/1280461670979993613)
+
+## Payment Payload Enhancements
+
+The payment integration components (`DropInIntegration`, `ElementsIntegration`, `SecureFieldsIntegration`) now send enriched metadata including customer country and individual order line items.
+
+Example structure:
+
+```json
+{
+  "customer": {
+    "email": "...",
+    "lastName": "...",
+    "name": "...",
+    "phone": { "number": "..." },
+    "country": { "code": "US" }
+  },
+  "order": {
+    "billingAddress": {
+      "name": "...",
+      "city": "...",
+      "country": { "code": "US" },
+      "postalCode": "...",
+      "state": "..."
+    },
+    "lines": [
+      {
+        "name": "Merino Wool Sweater",
+        "quantity": 1,
+        "unitPrice": { "value": 185 },
+        "total": { "value": 185 }
+      }
+    ]
+  }
+}
+```
+
+All `unitPrice.value` and `total.value` amounts are converted from base USD to the shopper's selected currency using the conversion logic in `useLocationDetection`. The shared cart definition lives in `src/lib/cart.ts`.
