@@ -32,6 +32,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
   const { toast } = useToast();
   const { selectedLocation } = useLocationContext();
   const { convertPrice } = useLocationDetection();
+  
 
   useEffect(() => {
     // Mock Payrails Secure Fields SDK initialization
@@ -75,7 +76,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
               currency: currency,
             },
             meta: metaPayload,
-            type: "dropIn",
+            type: "secureFields",
             holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
             workflowCode: "payment-acceptance",
             merchantReference: `o_${uuidv4()}`
@@ -100,127 +101,6 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
         const clientConfiguration = await response.json();
         console.log("Client configuration:", clientConfiguration);
-
-        const cardFormOptions: CardFormOptions = {
-          showCardHolderName: true,
-          showStoreInstrumentCheckbox: true,
-          showSingleExpiryDateField: false,
-
-          events: {},
-          styles: {
-            wrapper: {
-              height: "min-content",
-            },
-            base: {
-              fontSize: "1em",
-              outline: "none",
-              boxSizing: "border-box",
-              display: "block",
-              height: "min-content",
-            },
-            storeCardCheckbox: {
-              marginTop: "16px",
-            },
-            inputFields: {
-              all: {
-                base: {
-                  borderTop: "1px solid #D3D3D3",
-                  borderLeft: "1px solid #D3D3D3",
-                  borderRight: "1px solid #D3D3D3",
-                  borderBottom: "1px solid #D3D3D3",
-                  borderRadius: "8px",
-                  padding: "0.8rem",
-                  boxSizing: "border-box",
-                  marginTop: "8px",
-                },
-              },
-              CARDHOLDER_NAME: {
-                base: {
-                  borderTopLeftRadius: "8px",
-                  borderTopRightRadius: "8px",
-                },
-              },
-              CVV: {
-                base: {
-                  borderRadius: "8px",
-                  borderBottomRightRadius: "8px",
-                  marginLeft: "0.7rem",
-                  maxWidth: "calc(66% - 0.5rem)",
-                },
-              },
-              EXPIRATION_DATE: {
-                base: {
-                  borderRadius: "8px",
-                  borderBottomRightRadius: "8px",
-                  maxWidth: "calc(80% - 0.5rem)",
-                },
-              },
-              EXPIRATION_YEAR: {
-                base: {
-                  marginLeft: "0.3rem",
-                  maxWidth: "calc(90% - 0.3rem)",
-                },
-              },
-            },
-            labels: {
-              all: {
-                fontKerning: "normal",
-                fontFamily: "Inter, system-ui, sans-serif",
-                border: "0",
-                fontStyle: "normal",
-                margin: "0",
-                padding: "0",
-                verticalAlign: "baseline",
-                fontSize: "1rem",
-                fontWeight: "400",
-                display: "block",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                transition: "color .1s ease-out",
-                whiteSpace: "nowrap",
-                boxSizing: "border-box",
-                color: "#3e3e3e",
-                marginTop: "8px",
-              },
-              CVV: {
-                marginLeft: "0.5rem",
-              },
-            },
-
-            addressSelector: {
-              wrapper: {
-                display: "flex",
-                flexDirection: "row",
-                gap: "8px",
-              },
-              countrySelector: {
-                wrapper: {
-                  flexDirection: "column",
-                },
-                element: {
-                  border: "1px solid #D3D3D3",
-                  borderRadius: "8px",
-                  padding: "0.8rem",
-                  boxShadow: "none",
-                  height: "fit-content",
-                  margin: "0px",
-                },
-              },
-              postalCodeInput: {
-                wrapper: {
-                  flexDirection: "column",
-                },
-                element: {
-                  maxWidth: "40%",
-                  padding: "8px",
-                  borderRadius: "8px",
-                  boxSizing: "border-box",
-                  border: "1px solid #D3D3D3",
-                },
-              },
-            },
-          },
-        };
 
         if (Payrails) {
           const payrailsClient = Payrails.init(clientConfiguration.data, {
@@ -262,7 +142,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
             },
             placeholder: "",
 
-            type: ElementType.CARD_NUMBER,
+            type: ElementType.CARDHOLDER_NAME,
           });
           // Unmount previously added element if any
           document.getElementById('cardHolderName')!.innerHTML = '';
@@ -400,7 +280,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
     setCustomerData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleMockPayment = () => {
+  const handleMockPayment = async () => {
     if (!customerData.nameOnCard) {
       toast({
         title: "Validation Required",

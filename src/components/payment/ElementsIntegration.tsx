@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from "uuid";
 import "@payrails/web-sdk/payrails-styles.css";
 import {
   CardFormOptions,
+  PAYMENT_METHOD_CODES,
   Payrails,
   PayrailsEnvironment,
 } from "@payrails/web-sdk";
@@ -38,6 +39,9 @@ const ElementsIntegration = ({
   const { convertPrice } = useLocationDetection();
 
   useEffect(() => {
+
+    const controller = new AbortController();
+    let mounted = true;
     // Mock Payrails Elements SDK initialization
     const initializeElements = async () => {
       try {
@@ -84,6 +88,7 @@ const ElementsIntegration = ({
             workflowCode: "payment-acceptance",
             merchantReference: `o_${uuidv4()}`
           }),
+          signal: controller.signal,
         });
 
         // ✅ Check if response is not ok
@@ -226,7 +231,7 @@ const ElementsIntegration = ({
           },
         };
 
-        if (Payrails) {
+        if (Payrails && mounted) {
           const payrailsClient = Payrails.init(clientConfiguration.data, {
             environment: PayrailsEnvironment.TEST,
           });
@@ -288,6 +293,9 @@ const ElementsIntegration = ({
               },
             },
           });
+
+          // Unmount previous button if any
+          document.getElementById('payment-button-container')!.innerHTML = '';
           paymentButton.mount('#payment-button-container');
 
           const googlePayButton = payrailsClient.googlePayButton({
@@ -308,6 +316,8 @@ const ElementsIntegration = ({
             }
           });
 
+          // Unmount previous button if any
+          document.getElementById('google-pay-button-container')!.innerHTML = '';
           googlePayButton.mount('#google-pay-button-container');
 
           // Apple pay button
@@ -323,6 +333,8 @@ const ElementsIntegration = ({
 
           });
 
+          // Unmount previous button if any
+          document.getElementById('apple-pay-button-container')!.innerHTML = '';
           applePayButton.mount('#apple-pay-button-container');
 
           // paypal
@@ -345,8 +357,41 @@ const ElementsIntegration = ({
               },
             }
           });
-
+          // Unmount previous button if any
+          document.getElementById('paypal-button-container')!.innerHTML = '';
           paypalButton.mount('#paypal-button-container');
+          console.log('paypal button', payrailsClient.getStoredInstruments());
+
+          // klarna button
+          const klarnaButton = payrailsClient.genericRedirectButton({
+            paymentMethod: {
+              paymentMethodCode: PAYMENT_METHOD_CODES.GENERIC_REDIRECT,
+            },
+            styles: {
+              base: {
+                width: '100%',
+                border: '1px solid transparent',
+                borderRadius: '8px',
+                backgroundColor: '#1f1f1f',
+                borderColor: 'transparent',
+                color: '#fff',
+                padding: '8px 24px',
+                fontSize: '14px',
+                minHeight: '44px',
+                fontFamily: 'Inter, system-ui, sans-serif',
+              },
+              hover: {
+                backgroundColor: '#000',
+              },
+            },
+            openInNewTab: true,
+            translations: {
+              label: 'Pay with Klarna',
+            }
+          });
+          // Unmount previous button if any
+          document.getElementById('klarna-button-container')!.innerHTML = '';
+          klarnaButton.mount('#klarna-button-container');
         }
       } catch (error) {
         console.error("Failed to initialize Elements:", error);
@@ -354,6 +399,10 @@ const ElementsIntegration = ({
     };
 
     initializeElements();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [amount, currency, customerOrderData, selectedLocation, convertPrice]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -399,6 +448,9 @@ const ElementsIntegration = ({
         <div id="google-pay-button-container" className="mb-6"></div>
         <div id="apple-pay-button-container" className="mb-6"></div>
         <div id="paypal-button-container" className="mb-6"></div>
+        <div id="klarna-button-container" className="mb-6"></div>
+
+        {/* Separator */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <span className="w-full border-t border-fashion-border" />
