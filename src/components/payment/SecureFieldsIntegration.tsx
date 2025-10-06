@@ -243,6 +243,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
                 padding: "0.8rem",
                 boxSizing: "border-box",
                 marginTop: "8px",
+                textIndent: "0px",
               },
               cardIcon: {
                 display: "none"
@@ -263,6 +264,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
             type: ElementType.CARD_NUMBER,
           });
+          // Unmount previously added element if any
+          document.getElementById('cardHolderName')!.innerHTML = '';
           cardHolderName.mount("#cardHolderName");
 
           // Card number field
@@ -291,6 +294,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
             type: ElementType.CARD_NUMBER,
           });
+          // Unmount previously added element if any
+          document.getElementById('cardNumber')!.innerHTML = '';
           cardNumber.mount("#cardNumber");
 
           // Expiration month field
@@ -318,6 +323,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
             type: ElementType.EXPIRATION_MONTH,
           });
+          // Unmount previously added element if any
+          document.getElementById('expirationMonth')!.innerHTML = '';
           expirationMonth.mount("#expirationMonth");
 
           // Expiration year field
@@ -345,6 +352,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
             type: ElementType.EXPIRATION_YEAR,
           });
+          // Unmount previously added element if any
+          document.getElementById('expirationYear')!.innerHTML = '';
           expirationYear.mount("#expirationYear");
 
           // Expiration year field
@@ -372,6 +381,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
             type: ElementType.CVV,
           });
+          // Unmount previously added element if any
+          document.getElementById('cvv')!.innerHTML = '';
           cvv.mount("#cvv");
 
         }
