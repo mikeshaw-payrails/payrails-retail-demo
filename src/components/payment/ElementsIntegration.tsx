@@ -16,6 +16,7 @@ import { CustomerOrderData } from "@/types/checkout";
 import { CART_ITEMS } from "@/lib/cart";
 import { useLocationContext } from "@/contexts/LocationContext";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
+import { useNavigate } from "react-router-dom";
 
 interface ElementsIntegrationProps {
   amount: number;
@@ -37,6 +38,7 @@ const ElementsIntegration = ({
   const { toast } = useToast();
   const { selectedLocation } = useLocationContext();
   const { convertPrice } = useLocationDetection();
+  const navigate = useNavigate();
 
   useEffect(() => {
 
@@ -247,8 +249,10 @@ const ElementsIntegration = ({
             },
             disabledByDefault: false, // default is false
             events: {
-              onAuthorizeSuccess: () => {
-                console.log('yay!');
+              onAuthorizeSuccess: (event) => {
+                console.log("Payment authorized successfully:", event);
+                navigate("/order-confirmation");
+                return Promise.resolve(true);
               },
               onAuthorizeFailed: (e) => {
                 console.log('nah :(', e);
@@ -313,6 +317,11 @@ const ElementsIntegration = ({
             },
             events: {
               // Same as payment button
+              onAuthorizeSuccess: (event) => {
+                console.log("Payment authorized successfully:", event);
+                navigate("/order-confirmation");
+                return Promise.resolve(true);
+              },
             }
           });
 
@@ -325,6 +334,11 @@ const ElementsIntegration = ({
             showStoreInstrumentCheckbox: false,
             events: {
               // same as payment button
+              onAuthorizeSuccess: (event) => {
+                console.log("Payment authorized successfully:", event);
+                navigate("/order-confirmation");
+                return Promise.resolve(true);
+              },
             },
             styles: {
               type: 'buy',
@@ -350,6 +364,11 @@ const ElementsIntegration = ({
             },
             events: {
               // same as payment button
+              onAuthorizeSuccess: (event) => {
+                console.log("Payment authorized successfully:", event);
+                navigate("/order-confirmation");
+                return Promise.resolve(true);
+              },
             },
             translations: {
               labels: {
@@ -360,12 +379,18 @@ const ElementsIntegration = ({
           // Unmount previous button if any
           document.getElementById('paypal-button-container')!.innerHTML = '';
           paypalButton.mount('#paypal-button-container');
-          console.log('paypal button', payrailsClient.getStoredInstruments());
 
           // klarna button
           const klarnaButton = payrailsClient.genericRedirectButton({
             paymentMethod: {
               paymentMethodCode: PAYMENT_METHOD_CODES.GENERIC_REDIRECT,
+            },
+            events: {
+              onAuthorizeSuccess: (event) => {
+                console.log("Payment authorized successfully:", event);
+                navigate("/order-confirmation");
+                return Promise.resolve(true);
+              },
             },
             styles: {
               base: {
@@ -403,7 +428,7 @@ const ElementsIntegration = ({
       mounted = false;
       controller.abort();
     };
-  }, [amount, currency, customerOrderData, selectedLocation, convertPrice]);
+  }, [amount, currency, customerOrderData, selectedLocation, convertPrice, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setPaymentData((prev) => ({ ...prev, [field]: value }));
@@ -444,7 +469,7 @@ const ElementsIntegration = ({
       </div>
 
       <div className="space-y-6">
-        {/* Google Pay Button */}
+        {/* Pay Buttons */}
         <div id="google-pay-button-container" className="mb-6"></div>
         <div id="apple-pay-button-container" className="mb-6"></div>
         <div id="paypal-button-container" className="mb-6"></div>
@@ -464,61 +489,7 @@ const ElementsIntegration = ({
 
         {/* <div> */}
         <div id="card-form-container"></div>
-        {/* <Label
-            htmlFor="nameOnCard"
-            className="text-sm font-medium text-foreground mb-2 block"
-          >
-            Cardholder Name
-          </Label>
-          <Input
-            id="nameOnCard"
-            value={paymentData.nameOnCard}
-            onChange={(e) => handleInputChange("nameOnCard", e.target.value)}
-            className="border-fashion-border focus:border-foreground focus:ring-0 bg-fashion-surface"
-          />
-        </div>
-
-        <div>
-          <Label className="text-sm font-medium text-foreground mb-2 block">
-            Card Number
-          </Label>
-          <div className="relative">
-            <Input
-              value={paymentData.cardNumber}
-              onChange={(e) => handleInputChange("cardNumber", e.target.value)}
-              placeholder="1234 1234 1234 1234"
-              className="border-fashion-border focus:border-foreground focus:ring-0 bg-fashion-subtle"
-            />
-            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground font-light">
-              Secure Element
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-2 block">
-              Expiry Date
-            </Label>
-            <Input
-              value={paymentData.expiry}
-              onChange={(e) => handleInputChange("expiry", e.target.value)}
-              placeholder="MM/YY"
-              className="border-fashion-border focus:border-foreground focus:ring-0 bg-fashion-subtle"
-            />
-          </div>
-          <div>
-            <Label className="text-sm font-medium text-foreground mb-2 block">
-              CVV
-            </Label>
-            <Input
-              value={paymentData.cvv}
-              onChange={(e) => handleInputChange("cvv", e.target.value)}
-              placeholder="123"
-              className="border-fashion-border focus:border-foreground focus:ring-0 bg-fashion-subtle"
-            />
-          </div>
-        </div> */}
+        
 
         <div className="p-4 bg-fashion-accent rounded-sm">
           <p className="text-xs text-muted-foreground font-light">

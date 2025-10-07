@@ -17,6 +17,7 @@ import { CustomerOrderData } from "@/types/checkout";
 import { CART_ITEMS } from "@/lib/cart";
 import { useLocationContext } from "@/contexts/LocationContext";
 import { useLocationDetection } from "@/hooks/useLocationDetection";
+import { useNavigate } from "react-router-dom";
 
 interface SecureFieldsIntegrationProps {
   amount: number;
@@ -32,9 +33,12 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
   const { toast } = useToast();
   const { selectedLocation } = useLocationContext();
   const { convertPrice } = useLocationDetection();
+  const navigate = useNavigate();
   
 
   useEffect(() => {
+    const controller = new AbortController();
+    let mounted = true;
     // Mock Payrails Secure Fields SDK initialization
     const initializeSecureFields = async () => {
       try {
@@ -65,6 +69,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
 
         const response = await fetch(`${apiURL}`, {
           method: "POST",
+          signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
             "x-client-key": "lWQVRFIEtFWS0tLS0tCk1JSUpRZ0lCQURBTkJna3",
@@ -102,7 +107,7 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
         const clientConfiguration = await response.json();
         console.log("Client configuration:", clientConfiguration);
 
-        if (Payrails) {
+        if (Payrails && mounted) {
           const payrailsClient = Payrails.init(clientConfiguration.data, {
             environment: PayrailsEnvironment.TEST,
           });
@@ -266,14 +271,20 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
           cvv.mount("#cvv");
 
         }
-
-        console.log("🔧 Secure Fields SDK would be initialized here");
+        return () => {
+          mounted = false;
+          controller.abort();
+        };
       } catch (error) {
         console.error("Failed to initialize Secure Fields:", error);
       }
     };
 
     initializeSecureFields();
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
   }, [amount, currency, customerOrderData, selectedLocation, convertPrice]);
 
   const handleInputChange = (field: string, value: string) => {
@@ -281,14 +292,14 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
   };
 
   const handleMockPayment = async () => {
-    if (!customerData.nameOnCard) {
-      toast({
-        title: "Validation Required",
-        description: "Please complete required fields",
-        variant: "destructive"
-      });
-      return;
-    }
+    // if (!customerData.nameOnCard) {
+    //   toast({
+    //     title: "Validation Required",
+    //     description: "Please complete required fields",
+    //     variant: "destructive"
+    //   });
+    //   return;
+    // }
 
     toast({
       title: "Processing Payment",
@@ -300,6 +311,8 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
         title: "Payment Confirmed",
         description: "Your order has been successfully processed.",
       });
+      console.log("Payment authorized successfully:", event);
+      navigate("/order-confirmation");
     }, 2000);
   };
 
@@ -334,13 +347,6 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
             id="secure-card-number"
             className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
           >
-            {/* <div className="flex items-center justify-between w-full">
-              <span className="text-muted-foreground text-sm font-light">Secure Tokenized Field</span>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-                <span className="text-xs text-success font-medium">Protected</span>
-              </div>
-            </div> */}
             <div id="cardNumber" className="w-full"></div>
           </div>
         </div>
@@ -354,10 +360,6 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
               id="secure-expiry"
               className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
             >
-              {/* <div className="flex items-center justify-between w-full">
-                <span className="text-muted-foreground text-sm font-light">MM/YY</span>
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-              </div> */}
               <div className="flex space-x-2 w-full">
                 <div id="expirationMonth" className="w-1/2"></div>
                 <div id="expirationYear" className="w-1/2"></div>
@@ -372,10 +374,6 @@ const SecureFieldsIntegration = ({ amount, currency, customerOrderData }: Secure
               id="secure-cvv"
               className="min-h-[48px] p-3 border border-fashion-border rounded-sm bg-fashion-subtle flex items-center"
             >
-              {/* <div className="flex items-center justify-between w-full">
-                <span className="text-muted-foreground text-sm font-light">•••</span>
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-              </div> */}
               <div id="cvv" className="w-full"></div>
             </div>
           </div>
