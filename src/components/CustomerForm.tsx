@@ -4,17 +4,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLocationDetection, SUPPORTED_COUNTRIES } from "@/hooks/useLocationDetection";
 import { useLocationContext } from "@/contexts/LocationContext";
+import { v4 as uuidv4 } from "uuid";
 
 interface CustomerOrderData {
   customer: {
     email: string;
     lastName: string;
+    reference: string; // unique customer reference
     name: string; // combined first + last
     phone: {
       number: string;
-    };
+    },
+    country: {
+      code: string;
+    }
   };
   order: {
+    reference?: string; // unique order reference (optional)
     billingAddress: {
       // Name associated with the billing address (duplicated from customer.name for payment provider)
       name?: string;
@@ -149,12 +155,17 @@ const CustomerForm = ({ onChange }: CustomerFormProps) => {
       customer: {
         email: formData.email,
         lastName: formData.lastName,
+        reference: `c_${uuidv4()}`, // Generate a unique customer reference
         name: `${formData.firstName}`,
         phone: {
           number: formData.phone,
         },
+        country: {
+          code: formData.country,
+        },
       },
       order: {
+        reference: `o_${uuidv4()}`, // Optionally generate a unique order reference
         billingAddress: {
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           city: formData.city,

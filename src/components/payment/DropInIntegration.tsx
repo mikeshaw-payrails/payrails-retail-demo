@@ -68,6 +68,15 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
             ...customerOrderData?.customer,
             country: { code: selectedLocation?.countryCode || customerOrderData?.order.billingAddress.country.code || 'US' }
           },
+          clientContext: {
+            ipAddress: "127.0.0.1",
+            userAgent: "Chrome",
+            language: "en-EN",
+            deviceFingerprint: "123"
+          },
+          risk: {
+            sessionId: "111111111",
+          }
         };
         console.debug('[DropIn] Meta payload sent to backend', metaPayload);
 
