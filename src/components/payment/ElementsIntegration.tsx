@@ -255,7 +255,12 @@ const ElementsIntegration = ({
                 return Promise.resolve(true);
               },
               onAuthorizeFailed: (e) => {
-                console.log('nah :(', e);
+                console.error('Payment authorization failed:', e);
+                toast({
+                  title: 'Payment Failed',
+                  description: 'We could not authorize your payment. Please verify your details or try another method.',
+                  variant: 'destructive',
+                });
               },
               onPaymentButtonClicked: (e) => {
                 console.log('clicked', e);
@@ -322,6 +327,14 @@ const ElementsIntegration = ({
                 navigate("/order-confirmation");
                 return Promise.resolve(true);
               },
+              onAuthorizeFailed: (e) => {
+                console.error('Payment authorization failed:', e);
+                toast({
+                  title: 'Payment Failed',
+                  description: 'We could not authorize your payment. Please verify your details or try another method.',
+                  variant: 'destructive',
+                });
+              }
             }
           });
 
@@ -428,7 +441,7 @@ const ElementsIntegration = ({
       mounted = false;
       controller.abort();
     };
-  }, [amount, currency, customerOrderData, selectedLocation, convertPrice, navigate]);
+  }, [amount, currency, customerOrderData, selectedLocation, convertPrice, navigate, toast]);
 
   const handleInputChange = (field: string, value: string) => {
     setPaymentData((prev) => ({ ...prev, [field]: value }));
@@ -489,7 +502,7 @@ const ElementsIntegration = ({
 
         {/* <div> */}
         <div id="card-form-container"></div>
-        
+
 
         <div className="p-4 bg-fashion-accent rounded-sm">
           <p className="text-xs text-muted-foreground font-light">

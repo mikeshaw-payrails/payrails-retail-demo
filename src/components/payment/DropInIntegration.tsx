@@ -44,6 +44,7 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
     const initializeDropInElement = async () => {
       try {
         const apiURL = import.meta.env.VITE_API_URL;
+        const orderId = `o_${uuidv4()}`;
 
         // Build line items in selected currency
         const lineItems = CART_ITEMS.map(item => {
@@ -59,6 +60,7 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
 
         const metaPayload = {
           order: {
+            reference: orderId,
             ...customerOrderData?.order,
             lines: lineItems,
           },
@@ -79,7 +81,7 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
           type: "dropIn",
           holderReference: "customer_123456789", // Fake the Customer ID as this is a demo
           workflowCode: "payment-acceptance",
-          merchantReference: `o_${uuidv4()}`,
+          merchantReference: orderId,
         })
 
         console.log("Request body for Drop-in:", body);
