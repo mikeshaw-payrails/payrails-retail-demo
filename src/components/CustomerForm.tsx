@@ -149,7 +149,7 @@ const CustomerForm = ({ onChange }: CustomerFormProps) => {
       customer: {
         email: formData.email,
         lastName: formData.lastName,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        name: `${formData.firstName}`,
         phone: {
           number: formData.phone,
         },
