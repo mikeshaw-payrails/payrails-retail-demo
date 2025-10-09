@@ -21,6 +21,8 @@ interface CustomerOrderData {
   };
   order: {
     reference?: string; // unique order reference (optional)
+    softDescriptor?: string; // optional soft descriptor for card statement
+    softDescriptorCity?: string; // optional soft descriptor city for card statement
     billingAddress: {
       // Name associated with the billing address (duplicated from customer.name for payment provider)
       name?: string;
@@ -166,6 +168,8 @@ const CustomerForm = ({ onChange }: CustomerFormProps) => {
       },
       order: {
         reference: `o_${uuidv4()}`, // Optionally generate a unique order reference
+        softDescriptor: "Al Futtaim",
+        softDescriptorCity: "Dubai",
         billingAddress: {
           name: `${formData.firstName} ${formData.lastName}`.trim(),
           city: formData.city,

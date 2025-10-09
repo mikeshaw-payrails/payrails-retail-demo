@@ -132,6 +132,9 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
               showExistingCards: false,
             },
           },
+          returnInfo: {
+            success: `${window.location.origin}/order-confirmation`,
+          },
           events: {
             onAuthorizeSuccess: (event) => {
               console.log("Payment authorized successfully:", event);
@@ -316,6 +319,9 @@ const DropInIntegration = ({ amount, currency, customerOrderData }: DropInIntegr
 
         if (Payrails) {
           const payrailsClient = Payrails.init(clientConfiguration.data, {
+            returnInfo: {
+              success: `${window.location.origin}/order-confirmation`,
+            },
             environment: PayrailsEnvironment.TEST,
           });
           const dropIn = payrailsClient.dropin(dropInConfiguration);
